@@ -38,6 +38,7 @@ use "data/clean/enoe_analysis.dta", clear
 estpost tabstat incearn log_income female age yrschool, ///
     stats(mean sd min max n) columns(statistics)
 
+
 esttab using "output/table1_summarystats.tex", replace ///
     cells("mean(fmt(2)) sd(fmt(2)) min(fmt(0)) max(fmt(0)) count(fmt(0))") ///
     nomtitle nonumber label ///
