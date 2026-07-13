@@ -1,3 +1,6 @@
+/**********************************************************************
+Labels data directly from IPUMS (note: this code was not written by me)
+*************************************************************************/
 clear
 set more off
 pause off
