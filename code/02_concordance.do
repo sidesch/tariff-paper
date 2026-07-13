@@ -8,18 +8,6 @@ cd "~/Desktop/school/6th/ecn374/finaldraft"
 * data/clean/enoe_merged.dta
 ********************************************************************************
 
-* Build TIGIE-SCIAN concordance (with AI assistance)
-import excel "data/raw/concordance_inegi.xlsx", cellrange(A5:E10000) firstrow clear
-rename A tigie
-rename D scian
-drop Reproductores~a Explotaciónde~s C
-gen tigie_clean = subinstr(tigie, ".", "", .)  
-gen hs6 = real(substr(tigie_clean, 1, 6))      
-gen scian_num = real(scian)
-bysort hs6: keep if _n == 1
-keep hs6 scian_num
-save "data/clean/tigie_scian_clean.dta", replace
-
 * Extract tariff increase rates
 use "data/raw/fajgelbaum_tariffs.dta", clear
 keep if t == 1
