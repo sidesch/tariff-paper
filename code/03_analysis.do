@@ -1,71 +1,70 @@
+/*******************************************************************************
+All regressions, figures, and tables using cleaned data
+*******************************************************************************/
 clear all
 set more off
-cd "~/Desktop/school/6th/ecn374/finaldraft"
 
-********************************************************************************
-* 03_analysis.do
-* All figures, summary statistics, and regressions
-* Notes: Q2 2020 is missing
-********************************************************************************
+global data "~/Desktop/school/6th/ecn374/finaldraft/data"
+global output "~/Desktop/school/6th/ecn374/finaldraft/output"
 
-use "data/clean/enoe_merged.dta", clear
+* NOTE: the data skips over the 2nd quarter of 2020 due to data collection issues
 
-* drop null income or 0 income, since the analysis should only be performed
-* on employed individuals. variance from different industries
+/*******************************************************************************
+Process ENOE data to prepare for analysis
+*******************************************************************************/
+use "$data/clean/enoe_merged.dta", clear
+
+* the analysis should only be performed on employed individuals so we drop if income is null or 0
 keep if incearn > 0 & !missing(incearn)
 
-* Generate analysis variables
-cap drop log_income
+* remove incomes coded as null
+drop if incearn >= 99999998
+
 gen log_income = log(incearn)
 gen female     = (sex == 2)
 
-* Label variables for tables
-label var log_income   "Log Earned Income"
-label var incearn      "Earned Income (Pesos)"
-label var female       "Female"
-label var age          "Age"
-label var age2         "Age Squared"
-label var yrschool     "Years of Schooling"
-label var dz_usch_w    "Tariff Exposure ($\Delta\tau_j$)"
+* 
+lab var log_income   "Log Earned Income"
+lab var incearn      "Earned Income (Pesos)"
+lab var female       "Female"
+lab var age          "Age"
+lab var age2         "Age Squared"
+lab var yrschool     "Years of Schooling"
+lab var dz_usch_w    "Tariff Exposure ($\Delta\tau_j$)"
 
-save "data/clean/enoe_analysis.dta", replace
+save "$data/processed/enoe_analysis.dta", replace
 
-********************************************************************************
-* TABLE 1: Person-level summary statistics
-********************************************************************************
-use "data/clean/enoe_analysis.dta", clear
+/*******************************************************************************
+Summary statistics table: income, age, and years of school
+*******************************************************************************/
+use "$data/clean/enoe_analysis.dta", clear
 
-estpost tabstat incearn log_income female age yrschool, ///
-    stats(mean sd min max n) columns(statistics)
+estpost tabstat incearn age yrschool, stats(mean sd min max n) columns(statistics)
 
-esttab using "output/table1_summarystats.tex", replace ///
+esttab using "$output/summarystats.tex", replace ///
     cells("mean(fmt(2)) sd(fmt(2)) min(fmt(0)) max(fmt(0)) count(fmt(0))") ///
     nomtitle nonumber label ///
     title("Summary Statistics: ENOE Sample, Employed Workers 2014--2020") ///
-    collabels("Mean" "Std. Dev." "Min" "Max" "N") ///
-    addnotes("Source: ENOE, INEGI via IPUMS International. Author's calculations.")
+    collabels("Mean" "Std. Dev." "Min" "Max" "N")
 
-********************************************************************************
-* TABLE 2: Industry-level tariff exposure summary
-********************************************************************************
-use "data/clean/tariffs_by_scian3.dta", clear
+/*******************************************************************************
+Tariff exposure by industry
+*******************************************************************************/
+use "$data/clean/tariffs_by_scian3.dta", clear
 
-estpost tabstat dz_usch_w, ///
-    stats(mean sd min max n) columns(statistics)
+estpost tabstat dz_usch_w, stats(mean sd min max n) columns(statistics)
 
-esttab using "output/table2_tariffs.tex", replace ///
+esttab using "$output/tariffs_by_industry.tex", replace ///
     cells("mean(fmt(3)) sd(fmt(3)) min(fmt(3)) max(fmt(3)) count(fmt(0))") ///
     nomtitle nonumber ///
-    title("Summary Statistics: Industry-Level Tariff Exposure") ///
+    title("Tariff Exposure by Industry") ///
     collabels("Mean" "Std. Dev." "Min" "Max" "N") ///
-    addnotes("Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance (INEGI)." ///
-             "$\Delta\tau_j$ is the pre-war weighted average US tariff increase" ///
-             "on Chinese goods, collapsed to 3-digit SCIAN industry level.")
+		note("Source: Fajgelbaum Replication Package. Weighted averages by trade weight (Source: USITC DataWeb)")
 
-********************************************************************************
+/*******************************************************************************
 * FIGURE 1: Mexico exports to the US over time
 * Note: Data from Table 1 of the paper, entered manually
-********************************************************************************
+*******************************************************************************/
 clear
 input year exports
     2014 318.7
