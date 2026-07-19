@@ -13,7 +13,7 @@ rename A tigie
 rename D scian
 cap tostring tigie, replace
 cap tostring scian, replace
-drop 2 3 5 // columns with descriptive text
+drop Reproductores~a Explotaciónde~s C
 
 gen tigie_clean = subinstr(tigie, ".", "", .)  
 gen hs6 = real(substr(tigie_clean, 1, 6))      

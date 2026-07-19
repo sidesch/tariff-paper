@@ -57,7 +57,7 @@ quietly infix                 ///
   byte    disemp     158-158  ///
   byte    hlthfac    159-160  ///
   byte    hlthcov    161-162  ///
-  using `"ipumsi_00001.dat"'
+  using `"$data/raw/ipumsi_00001.dat"'
 
 replace hhwt      = hhwt      / 100
 replace perwt     = perwt     / 100
@@ -5452,6 +5452,4 @@ label values hlthcov hlthcov_lbl
 
 tostring ind, replace
 
-gen log_income = log(incearn)
-
-save enoe_ipums.dta, replace
+save "$data/processed/enoe_ipums.dta", replace

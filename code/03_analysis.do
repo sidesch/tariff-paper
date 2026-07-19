@@ -37,8 +37,6 @@ save "$data/processed/enoe_analysis.dta", replace
 /*******************************************************************************
 Summary statistics table: income, age, and years of school
 *******************************************************************************/
-use "$data/clean/enoe_analysis.dta", clear
-
 estpost tabstat incearn age yrschool, stats(mean sd min max n) columns(statistics)
 
 esttab using "$output/summarystats.tex", replace ///
