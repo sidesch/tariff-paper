@@ -23,7 +23,6 @@ drop if incearn >= 99999998
 gen log_income = log(incearn)
 gen female     = (sex == 2)
 
-* 
 lab var log_income   "Log Earned Income"
 lab var incearn      "Earned Income (Pesos)"
 lab var female       "Female"
@@ -48,7 +47,7 @@ esttab using "$output/summarystats.tex", replace ///
 /*******************************************************************************
 Tariff exposure by industry
 *******************************************************************************/
-use "$data/clean/tariffs_by_scian3.dta", clear
+use "$data/processed/tariffs_by_scian3.dta", clear
 
 estpost tabstat dz_usch_w, stats(mean sd min max n) columns(statistics)
 
@@ -88,15 +87,14 @@ twoway (line exports year, lcolor(navy) lwidth(medthick)), ///
     note("Source: INEGI COMEXT. Dashed line indicates start of US-China trade war (2018).") ///
     scheme(s2mono)
 
-graph export "output/figure1_exports.pdf", replace
+graph export "$output/figure1_exports.pdf", replace
 
 ********************************************************************************
 * FIGURE 2A: Income distribution over time - kernel density
 * Shows full distribution shift pre vs post shock
 ********************************************************************************
-use "data/clean/enoe_analysis.dta", clear
+use "$data/processed/enoe_analysis.dta", clear
 
-* Keep three representative years for clarity
 keep if inlist(year, 2016, 2018, 2020)
 
 twoway ///
@@ -110,14 +108,12 @@ twoway ///
     note("Source: ENOE, INEGI.") ///
     scheme(s2mono)
 	
-graph export "output/figure2a_kdensity.pdf", replace
+graph export "$output/figure2a_kdensity.pdf", replace
 
 ********************************************************************************
 * FIGURE 2B: Income distribution over time - percentile lines
 * Shows divergence across the distribution more clearly
 ********************************************************************************
-use "data/clean/enoe_analysis.dta", clear
-
 * compute log income percentiles by year
 gen log_inc = log(incearn)
 collapse ///
@@ -143,13 +139,13 @@ twoway ///
     note("Source: ENOE, INEGI. Dashed line indicates 2018 trade war onset.") ///
     scheme(s2mono)
 
-graph export "output/figure2b_percentiles.pdf", replace
+graph export "$output/figure2b_percentiles.pdf", replace
 
 ********************************************************************************
 * FIGURE 4: Histogram of industry tariff exposure
 * (Figure 3 is the event study plot - generated after regression below)
 ********************************************************************************
-use "data/clean/tariffs_by_scian3.dta", clear
+use "$data/processed/tariffs_by_scian3.dta", clear
 
 histogram dz_usch_w, ///
     frequency ///
@@ -161,12 +157,12 @@ histogram dz_usch_w, ///
          "Each observation is a 3-digit SCIAN industry.") ///
     scheme(s2mono)
 
-graph export "output/figure4_tariff_hist.pdf", replace
+graph export "$output/figure4_tariff_hist.pdf", replace
 
 ********************************************************************************
 * REGRESSION 1: Main event study, no controls
 ********************************************************************************
-use "data/clean/enoe_analysis.dta", clear
+use "$data/processed/enoe_analysis.dta", clear
 encode scian3, gen(scian3_num)
 
 reghdfe log_income c.dz_usch_w##ib2017.year, ///
@@ -234,7 +230,7 @@ coefplot, ///
     scheme(s2mono) ///
     ciopts(recast(rcap))
 
-graph export "output/figure3_eventstudy.pdf", replace
+graph export "$output/figure3_eventstudy.pdf", replace
 
 ********************************************************************************
 * REGRESSIONS 4-7: Quantile regressions at p25, p50, p75, p90
@@ -242,7 +238,7 @@ graph export "output/figure3_eventstudy.pdf", replace
 *       with industry dummies explicitly (slower but correct)
 * Note: clustering not supported in qreg; use vce(robust) instead
 ********************************************************************************
-use "data/clean/enoe_analysis.dta", clear
+use "$data/processed/enoe_analysis.dta", clear
 
 * Use a 10% random sample for quantile regressions
 set seed 12345
@@ -278,7 +274,7 @@ esttab qreg25 qreg50 qreg75 qreg90 using "output/table4_quantile.tex", replace /
 * ROBUSTNESS CHECK: 90/10 ratio regression
 * Collapse to industry-year level, compute log 90/10 ratio, regress on tariffs
 ********************************************************************************
-use "data/clean/enoe_analysis.dta", clear
+use "$data/processed/enoe_analysis.dta", clear
 
 * Collapse to industry-year level
 collapse ///
@@ -321,7 +317,7 @@ display "03_analysis.do complete."
 ********************************************************************************
 * PLOT B: Employment in high vs low tariff exposure industries over time
 ********************************************************************************
-use "data/clean/enoe_merged.dta", clear
+use "$data/processed/enoe_merged.dta", clear
 
 * Create high/low exposure groups based on median tariff exposure
 * Only among industries with nonzero exposure
@@ -367,12 +363,12 @@ twoway ///
          "High/low exposure split at median tariff increase among exposed industries.") ///
     scheme(s2mono)
 
-graph export "output/figureB_employment.pdf", replace
+graph export "$output/figureB_employment.pdf", replace
 
 ********************************************************************************
 * TABLE C: Top and bottom tariff-exposed industries
 ********************************************************************************
-use "data/clean/tariffs_by_scian3.dta", clear
+use "$data/processed/tariffs_by_scian3.dta", clear
 
 * Merge in industry names - we need to get labels from ENOE
 * Create a name lookup from the encoded scian3 variable
@@ -383,7 +379,7 @@ preserve
     save "data/clean/scian3_labels.dta", replace
 restore
 
-merge 1:1 scian3 using "data/clean/scian3_labels.dta"
+merge 1:1 scian3 using "$data/processed/scian3_labels.dta"
 drop _merge
 
 * Sort and keep top 10 and bottom 10 nonzero
@@ -396,7 +392,7 @@ preserve
     gen rank = _n
     gen exposure_pct = dz_usch_w * 100
     
-    listtab rank scian3 exposure_pct using "output/tableC_top_industries.tex", ///
+    listtab rank scian3 exposure_pct using "$output/tableC_top_industries.tex", ///
         replace ///
         rstyle(tabular) ///
         head("\begin{tabular}{clc}" ///
@@ -417,7 +413,7 @@ preserve
     gen rank = _n
     gen exposure_pct = dz_usch_w * 100
 
-    listtab rank scian3 exposure_pct using "output/tableC_bottom_industries.tex", ///
+    listtab rank scian3 exposure_pct using "$output/tableC_bottom_industries.tex", ///
         replace ///
         rstyle(tabular) ///
         head("\begin{tabular}{clc}" ///
