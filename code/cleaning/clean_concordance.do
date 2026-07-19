@@ -9,19 +9,18 @@ global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 cap mkdir "$data/processed"
 
 import excel "$data/raw/concordance_inegi.xlsx", cellrange(A5:E10000) firstrow
-rename A tigie
+rename A hts10
 rename D scian
-cap tostring tigie, replace
 cap tostring scian, replace
 drop Reproductores~a Explotaciónde~s C
 
-gen tigie_clean = subinstr(tigie, ".", "", .)  
-gen hs6 = real(substr(tigie_clean, 1, 6))      
+drop if missing(hts10)
+gen hts10_str = subinstr(hts10, ".", "", .)  
+gen hs6 = real(substr(hts10_str, 1, 6))      
 gen scian_num = real(scian)
-drop if missing(hs6)
 
-* TODO: we keep the first value for now but later weighted average
-bysort hs6: keep if _n == 1
-keep hs6 scian_num
+* merge with trade import data
+merge 1:1 hts10_str using "$data/processed/imports_clean.dta", keep(3)
+drop _merge
 
 save "$data/processed/tigie_scian_clean.dta", replace
