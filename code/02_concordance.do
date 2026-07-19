@@ -1,44 +1,33 @@
 clear all
 set more off
-cd "~/Desktop/school/6th/ecn374/finaldraft"
+
+global data "~/Desktop/school/6th/ecn374/finaldraft"
 
 ********************************************************************************
-* 02_concordance.do
-* Build industry-level tariff exposure variable and merge with ENOE
-* data/clean/enoe_merged.dta
+Build industry-level tariff exposure variable and merge with ENOE 
 ********************************************************************************
-
-* Extract tariff increase rates
-use "data/raw/fajgelbaum_tariffs.dta", clear
+use "$data/raw/fajgelbaum_tariffs.dta", clear
 keep if t == 1
 * hs6 is the product code
-* dz_usch_w is the pre-war weighted average US tariff increase on Chinese goods
+* dz_usch_w is average US tariff increase
 keep hs6 dz_usch_w
-save "data/clean/tariffs_clean.dta", replace
+save "$data/processed/tariffs_clean.dta", replace
 
-* Merge product-level tariffs with industry codes
-use "data/clean/tariffs_clean.dta", clear
-merge m:1 hs6 using "data/clean/tigie_scian_clean.dta"
+merge m:1 hs6 using "data/processed/tigie_scian_clean.dta"
 keep if _merge == 3
 drop _merge
-collapse (mean) dz_usch_w, by(scian_num)
+collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian_num)
 
-* Collapse to 3-digit SCIAN to match IPUMS industry codes
 gen scian3 = string(floor(scian_num / 1000))
-collapse (mean) dz_usch_w, by(scian3)
-save "data/clean/tariffs_by_scian3.dta", replace
+collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian3)
+save "data/processed/tariffs_by_scian3.dta", replace
 
-********************************************************************************
-* STEP 4: Merge tariff exposure with ENOE person-level data
-* Workers in non-traded service industries (SCIAN > 4000) get dz_usch_w = 0
-* These form the control group in the diff-in-diff
-********************************************************************************
-* Merge with person-level microdata
-use "data/raw/enoe_ipums.dta", clear
+* merge with person-level data
+use "$data/raw/enoe_ipums.dta", clear
 keep if empstat == 1
 gen scian3 = substr(ind, 1, 3)
-merge m:1 scian3 using "data/clean/tariffs_by_scian3.dta"
-replace dz_usch_w = 0 if _merge == 1          // AI assistance
+merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta"
+replace dz_usch_w = 0 if _merge == 1
 drop if ind == "0"
 drop _merge
-save "data/clean/enoe_merged.dta", replace
+save "$data/processed/enoe_merged.dta", replace
