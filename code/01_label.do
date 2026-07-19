@@ -5,7 +5,7 @@ clear
 set more off
 pause off
 
-global data "~/Desktop/school/6th/ecn374/finaldraft"
+global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 
 quietly infix                 ///
   int     country    1-3      ///
