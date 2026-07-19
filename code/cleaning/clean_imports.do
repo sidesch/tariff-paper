@@ -14,4 +14,6 @@ drop if missing(hts10)
 tostring hts10, gen(hts10_str) format(%10.0f)
 gen hs6 = real(substr(hts10_str1,6))
 
+collapse (sum) customs_value, by(hs6)
+
 save "$data/processed/imports_clean.dta", replace
