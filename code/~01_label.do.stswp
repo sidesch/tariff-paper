@@ -5,9 +5,7 @@ clear
 set more off
 pause off
 
-cd "~/Desktop/school/6th/ecn374/draft1"
-* NOTE: You need to set the Stata working directory to the path
-* where the data file is located.
+global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 
 quietly infix                 ///
   int     country    1-3      ///

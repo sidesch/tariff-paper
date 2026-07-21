@@ -1,11 +1,11 @@
 clear all
 set more off
 
-global data "~/Desktop/school/6th/ecn374/finaldraft"
+global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 
-********************************************************************************
+/********************************************************************************
 Build industry-level tariff exposure variable and merge with ENOE 
-********************************************************************************
+********************************************************************************/
 use "$data/raw/fajgelbaum_tariffs.dta", clear
 keep if t == 1
 * hs6 is the product code
@@ -13,14 +13,14 @@ keep if t == 1
 keep hs6 dz_usch_w
 save "$data/processed/tariffs_clean.dta", replace
 
-merge m:1 hs6 using "data/processed/tigie_scian_clean.dta"
+merge m:1 hs6 using "$data/processed/tigie_scian_clean.dta"
 keep if _merge == 3
 drop _merge
 collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian_num)
 
 gen scian3 = string(floor(scian_num / 1000))
 collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian3)
-save "data/processed/tariffs_by_scian3.dta", replace
+save "$data/processed/tariffs_by_scian3.dta", replace
 
 * merge with person-level data
 use "$data/raw/enoe_ipums.dta", clear
