@@ -13,6 +13,6 @@ rename HTSNumber hts10
 drop if missing(hts10)
 gen hs6 = real(substr(hts10,1,6))
 destring customs_value, replace
-collapse (sum) customs_value (first) hs6, by(hts10)
+collapse (sum) customs_value, by(hs6)
 
 save "$data/processed/imports_clean.dta", replace
