@@ -19,8 +19,8 @@ replace hts10 = subinstr(hts10, ".", "", .)
 gen hs6 = real(substr(hts10, 1, 6))      
 gen scian_num = real(scian)
 
-* merge with trade import data
-merge 1:1 hts10 using "$data/processed/imports_clean.dta", keep(3)
+* merge with hs6 import data
+merge 1:1 hs6 using "$data/processed/imports_clean.dta", keep(3)
 drop _merge
 
 save "$data/processed/tigie_scian_clean.dta", replace
