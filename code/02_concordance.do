@@ -16,7 +16,6 @@ save "$data/processed/tariffs_clean.dta", replace
 merge m:1 hs6 using "$data/processed/tigie_scian_clean.dta"
 keep if _merge == 3
 drop _merge
-collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian_num)
 
 gen scian3 = string(floor(scian_num / 1000))
 collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian3)
