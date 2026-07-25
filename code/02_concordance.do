@@ -13,7 +13,7 @@ keep if t == 1
 keep hs6 dz_usch_w
 save "$data/processed/tariffs_clean.dta", replace
 
-merge m:1 hs6 using "$data/processed/tigie_scian_clean.dta"
+merge 1:m hs6 using "$data/processed/tigie_scian_clean.dta"
 keep if _merge == 3
 drop _merge
 
