@@ -114,6 +114,8 @@ graph export "$output/figure2a_kdensity.pdf", replace
 * FIGURE 2B: Income distribution over time - percentile lines
 * Shows divergence across the distribution more clearly
 ********************************************************************************
+use "$data/processed/enoe_analysis.dta", clear
+
 * compute log income percentiles by year
 gen log_inc = log(incearn)
 collapse ///
@@ -193,7 +195,7 @@ estimates store reg3
 ********************************************************************************
 * TABLE 3: Main regression results
 ********************************************************************************
-esttab reg1 reg2 reg3 using "output/table3_mainresults.tex", replace ///
+esttab reg1 reg2 reg3 using "$output/table3_mainresults.tex", replace ///
     keep(*dz_usch_w* *year* female age yrschool) ///
     order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
@@ -258,7 +260,7 @@ estimates store sqreg_all
 * TABLE 4: Quantile regression results
 * Show only the key interaction coefficients for clarity
 ********************************************************************************
-esttab qreg25 qreg50 qreg75 qreg90 using "output/table4_quantile.tex", replace ///
+esttab sqreg_all using "$output/table4_quantile.tex", replace ///
     keep(*dz_usch_w*year*) ///
     order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
@@ -291,6 +293,7 @@ merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta"
 drop if _merge == 2
 drop _merge
 replace dz_usch_w = 0 if missing(dz_usch_w)
+encode scian3, gen(scian3_num)
 
 * Regression
 reghdfe log_ratio_9010 c.dz_usch_w##ib2017.year, ///
@@ -299,7 +302,7 @@ reghdfe log_ratio_9010 c.dz_usch_w##ib2017.year, ///
 
 estimates store rob_9010
 
-esttab rob_9010 using "output/table5_ratio9010.tex", replace ///
+esttab rob_9010 using "$output/table5_ratio9010.tex", replace ///
     keep(*dz_usch_w*year*) ///
     order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
@@ -335,7 +338,8 @@ label define exp_lbl 0 "No Exposure (Services)" ///
 label values exposure_group exp_lbl
 
 * Collapse to group-year level - count employed workers
-collapse (count) employed=log_income, by(exposure_group year)
+keep if incearn > 0 & incearn < 99999998
+collapse (count) employed=incearn, by(exposure_group year)
 
 * Normalize to 2017 = 100 for each group
 bysort exposure_group: gen base = employed if year == 2017
