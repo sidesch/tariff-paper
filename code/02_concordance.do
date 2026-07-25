@@ -22,7 +22,7 @@ collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian3)
 save "$data/processed/tariffs_by_scian3.dta", replace
 
 * merge with person-level data
-use "$data/raw/enoe_ipums.dta", clear
+use "$data/processed/enoe_ipums.dta", clear
 keep if empstat == 1
 gen scian3 = substr(ind, 1, 3)
 merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta"
