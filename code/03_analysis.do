@@ -12,7 +12,7 @@ global output "~/Desktop/school/6th/ecn374/finaldraft/output"
 /*******************************************************************************
 Process ENOE data to prepare for analysis
 *******************************************************************************/
-use "$data/clean/enoe_merged.dta", clear
+use "$data/processed/enoe_merged.dta", clear
 
 * the analysis should only be performed on employed individuals so we drop if income is null or 0
 keep if incearn > 0 & !missing(incearn)
@@ -287,7 +287,7 @@ gen log_ratio_9010 = log(p90/p10)
 label var log_ratio_9010 "Log 90/10 Income Ratio"
 
 * Merge in tariff exposure
-merge m:1 scian3 using "data/clean/tariffs_by_scian3.dta"
+merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta"
 drop if _merge == 2
 drop _merge
 replace dz_usch_w = 0 if missing(dz_usch_w)
@@ -373,7 +373,7 @@ use "$data/processed/tariffs_by_scian3.dta", clear
 * Merge in industry names - we need to get labels from ENOE
 * Create a name lookup from the encoded scian3 variable
 preserve
-    use "data/clean/enoe_merged.dta", clear
+    use "$data/processed/enoe_merged.dta", clear
     keep scian3 ind
     duplicates drop scian3, force
     save "data/clean/scian3_labels.dta", replace
