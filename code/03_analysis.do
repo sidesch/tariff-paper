@@ -21,15 +21,16 @@ keep if incearn > 0 & !missing(incearn)
 drop if incearn >= 99999998
 
 gen log_income = log(incearn)
-gen female     = (sex == 2)
+gen female = (sex == 2)
+gen age_sq = age^2
 
-lab var log_income   "Log Earned Income"
-lab var incearn      "Earned Income (Pesos)"
-lab var female       "Female"
-lab var age          "Age"
-lab var age2         "Age Squared"
-lab var yrschool     "Years of Schooling"
-lab var dz_usch_w    "Tariff Exposure ($\Delta\tau_j$)"
+lab var log_income "Log Earned Income"
+lab var incearn "Earned Income (Pesos)"
+lab var female "Female"
+lab var age "Age"
+lab var age_sq "Age Squared"
+lab var yrschool "Years of Schooling"
+lab var dz_usch_w "Tariff Exposure ($\Delta\tau_j$)"
 
 save "$data/processed/enoe_analysis.dta", replace
 
@@ -51,6 +52,7 @@ use "$data/processed/tariffs_by_scian3.dta", clear
 
 estpost tabstat dz_usch_w, stats(mean sd min max n) columns(statistics)
 
+* Note: excludes non tradeable industries
 esttab using "$output/tariffs_by_industry.tex", replace ///
     cells("mean(fmt(3)) sd(fmt(3)) min(fmt(3)) max(fmt(3)) count(fmt(0))") ///
     nomtitle nonumber ///
@@ -59,8 +61,7 @@ esttab using "$output/tariffs_by_industry.tex", replace ///
 		note("Source: Fajgelbaum Replication Package. Weighted averages by trade weight (Source: USITC DataWeb)")
 
 /*******************************************************************************
-* FIGURE 1: Mexico exports to the US over time
-* Note: Data from Table 1 of the paper, entered manually
+Mexico exports to the US over time
 *******************************************************************************/
 clear
 input year exports
@@ -89,18 +90,17 @@ twoway (line exports year, lcolor(navy) lwidth(medthick)), ///
 
 graph export "$output/figure1_exports.pdf", replace
 
-********************************************************************************
-* FIGURE 2A: Income distribution over time - kernel density
-* Shows full distribution shift pre vs post shock
-********************************************************************************
+/********************************************************************************
+income distribution over time - kernel density
+********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
 keep if inlist(year, 2016, 2018, 2020)
 
 twoway ///
-    (kdensity log_income if year == 2016, lcolor(blue)  lwidth(medthick)) ///
-    (kdensity log_income if year == 2018, lcolor(black) lwidth(medthick) lpattern(dash)) ///
-    (kdensity log_income if year == 2020, lcolor(red)   lwidth(medthick) lpattern(dot)), ///
+    (kdensity log_income if year == 2016, lcolor(blue)  lwidth(vthin)) ///
+    (kdensity log_income if year == 2018, lcolor(black) lwidth(vthin) lpattern(dash)) ///
+    (kdensity log_income if year == 2020, lcolor(red)   lwidth(vthin) lpattern(dot)), ///
     legend(order(1 "2016 (pre-shock)" 2 "2018 (shock year)" 3 "2020 (post-shock)")) ///
     xtitle("Log Earned Income") ///
     ytitle("Density") ///
@@ -110,10 +110,9 @@ twoway ///
 	
 graph export "$output/figure2a_kdensity.pdf", replace
 
-********************************************************************************
-* FIGURE 2B: Income distribution over time - percentile lines
-* Shows divergence across the distribution more clearly
-********************************************************************************
+/********************************************************************************
+Income distribution over time
+********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
 * compute log income percentiles by year
@@ -143,10 +142,9 @@ twoway ///
 
 graph export "$output/figure2b_percentiles.pdf", replace
 
-********************************************************************************
-* FIGURE 4: Histogram of industry tariff exposure
-* (Figure 3 is the event study plot - generated after regression below)
-********************************************************************************
+/********************************************************************************
+Histogram of industry tariff exposure
+********************************************************************************/
 use "$data/processed/tariffs_by_scian3.dta", clear
 
 histogram dz_usch_w, ///
@@ -161,62 +159,47 @@ histogram dz_usch_w, ///
 
 graph export "$output/figure4_tariff_hist.pdf", replace
 
-********************************************************************************
-* REGRESSION 1: Main event study, no controls
-********************************************************************************
+/********************************************************************************
+Main event study baseline
+********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 encode scian3, gen(scian3_num)
 
-reghdfe log_income c.dz_usch_w##ib2017.year, ///
-    absorb(scian3_num) ///
+reghdfe log_income c.dz_usch_w#ib2017.year, ///
+    absorb(scian3_num year) ///
     cluster(scian3_num)
 
-estimates store reg1
+est sto reg1
 
-********************************************************************************
-* REGRESSION 2: Main event study, with individual controls
-********************************************************************************
-reghdfe log_income c.dz_usch_w##ib2017.year female age age2 yrschool, ///
-    absorb(scian3_num) ///
+/********************************************************************************
+Main event study with individual controls
+********************************************************************************/
+reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool, ///
+    absorb(scian3_num year) ///
     cluster(scian3_num)
 
-estimates store reg2
+est sto reg2
 
-********************************************************************************
-* REGRESSION 3: Robustness - industry-specific linear time trends
-* Absorbs any pre-existing linear trend within each industry
-********************************************************************************
-reghdfe log_income c.dz_usch_w##ib2017.year female age age2 yrschool, ///
-    absorb(scian3_num scian3_num#c.year) ///
-    cluster(scian3_num)
-
-estimates store reg3
-
-********************************************************************************
-* TABLE 3: Main regression results
-********************************************************************************
-esttab reg1 reg2 reg3 using "$output/table3_mainresults.tex", replace ///
-    keep(*dz_usch_w* *year* female age yrschool) ///
+/********************************************************************************
+Table with regression results
+********************************************************************************/
+esttab reg1 reg2 using "$output/table3_mainresults.tex", replace ///
+    keep(*dz_usch_w* female age* yrschool) ///
     order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
     title("Event Study: Effect of Tariff Exposure on Log Income") ///
-    mtitles("No Controls" "With Controls" "Industry Trends") ///
+    mtitles("No Controls" "With Controls") ///
     se star(* 0.10 ** 0.05 *** 0.01) ///
     stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
     addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "All regressions include industry fixed effects." ///
+             "All regressions include industry and year fixed effects." ///
              "Base year is 2017. $\Delta\tau_j$ is the pre-war weighted average" ///
              "US tariff increase on Chinese goods in industry $j$.")
 
-********************************************************************************
-* FIGURE 3: Event study plot (coefficients from Regression 2)
-********************************************************************************
-* Extract interaction coefficients and confidence intervals
+/********************************************************************************
+Event study plot (results from reg 2)
+********************************************************************************/
 estimates restore reg2
-
-* Use coefplot if installed, otherwise use manual approach
-cap which coefplot
-if _rc != 0 ssc install coefplot
 
 coefplot, ///
     keep(*year*dz_usch_w*) ///
@@ -234,75 +217,64 @@ coefplot, ///
 
 graph export "$output/figure3_eventstudy.pdf", replace
 
-********************************************************************************
-* REGRESSIONS 4-7: Quantile regressions at p25, p50, p75, p90
-* Note: quantile regression does not support reghdfe so we use qreg
-*       with industry dummies explicitly (slower but correct)
-* Note: clustering not supported in qreg; use vce(robust) instead
-********************************************************************************
+/********************************************************************************
+Inequality regressions 
+********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
-* Use a 10% random sample for quantile regressions
-set seed 12345
-sample 10
+_pctile incearn if year == 2017, p(10 25 50 75 90)
 
-* Generate industry dummies for qreg
-* (reghdfe not compatible with qreg)
-quietly tab scian3, gen(ind_)
+local cutoffs
+forval i = 1/5 {
+    local cutoffs `cutoffs' `=r(r`i')'
+}
 
-sqreg log_income c.dz_usch_w##ib2017.year ///
-    female age age2 yrschool ind_*, ///
-    quantiles(0.25 0.50 0.75 0.90) ///
-    reps(100)
-estimates store sqreg_all
+assert !missing(incearn)
+egen incgroup = cut(incearn), at(0 `cutoffs' .) icodes
+lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
+lab val incgroup incgrp_lbl
+lab var incgroup "Income Group"
 
-********************************************************************************
-* TABLE 4: Quantile regression results
-* Show only the key interaction coefficients for clarity
-********************************************************************************
-esttab sqreg_all using "$output/table4_quantile.tex", replace ///
+forval g = 0/5 {
+		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
+			if incgroup == `g', absorb(scian3_num year) cluster(scian3_num)
+		est sto reg_group`g'
+}
+
+esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
+		using "$output/table4_heterogeneity.tex", replace ///
     keep(*dz_usch_w*year*) ///
     order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
-    title("Quantile Regression: Effect of Tariff Exposure by Income Percentile") ///
-    mtitles("p25" "p50" "p75" "p90") ///
+    title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
+    mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
     se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N, fmt(%9.0fc) labels("Observations")) ///
-    addnotes("Robust standard errors in parentheses." ///
-             "All regressions include industry fixed effects and individual controls." ///
-             "Base year is 2017.")
+    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
+    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
+             "Income groups defined by fixed 2017 nominal income cutoffs.")
 
-********************************************************************************
-* ROBUSTNESS CHECK: 90/10 ratio regression
-* Collapse to industry-year level, compute log 90/10 ratio, regress on tariffs
-********************************************************************************
+/********************************************************************************
+90/10 ratio regression
+********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
-* Collapse to industry-year level
-collapse ///
-    (p10) p10=incearn ///
-    (p90) p90=incearn, ///
-    by(scian3 year)
+collapse (p10) p10=incearn (p90) p90=incearn, by(scian3 year)
 
-* Generate log 90/10 ratio
 gen log_ratio_9010 = log(p90/p10)
 label var log_ratio_9010 "Log 90/10 Income Ratio"
 
-* Merge in tariff exposure
-merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta"
-drop if _merge == 2
+merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta", keep(1 3)
 drop _merge
 replace dz_usch_w = 0 if missing(dz_usch_w)
-encode scian3, gen(scian3_num)
 
 * Regression
-reghdfe log_ratio_9010 c.dz_usch_w##ib2017.year, ///
-    absorb(scian3_num) ///
-    cluster(scian3_num)
+reghdfe log_ratio_9010 c.dz_usch_w#ib2017.year, ///
+    absorb(scian3 year) ///
+    cluster(scian3)
 
-estimates store rob_9010
+est sto ratio_9010
 
-esttab rob_9010 using "$output/table5_ratio9010.tex", replace ///
+esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
     keep(*dz_usch_w*year*) ///
     order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
@@ -314,8 +286,6 @@ esttab rob_9010 using "$output/table5_ratio9010.tex", replace ///
              "Outcome is log ratio of 90th to 10th income percentile" ///
              "within each industry-year cell." ///
              "Base year is 2017.")
-
-display "03_analysis.do complete."
 
 ********************************************************************************
 * PLOT B: Employment in high vs low tariff exposure industries over time
@@ -380,7 +350,7 @@ preserve
     use "$data/processed/enoe_merged.dta", clear
     keep scian3 ind
     duplicates drop scian3, force
-    save "data/clean/scian3_labels.dta", replace
+    save "$data/processed/scian3_labels.dta", replace
 restore
 
 merge 1:1 scian3 using "$data/processed/scian3_labels.dta"
