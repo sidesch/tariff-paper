@@ -1,73 +1,52 @@
 \begin{table}[htbp]\centering
 \def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
 \caption{Event Study: Effect of Tariff Exposure on Log Income}
-\begin{tabular}{l*{3}{c}}
+\begin{tabular}{l*{2}{c}}
 \toprule
-                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}\\
-                    &\multicolumn{1}{c}{No Controls}&\multicolumn{1}{c}{With Controls}&\multicolumn{1}{c}{Industry Trends}\\
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}\\
+                    &\multicolumn{1}{c}{No Controls}&\multicolumn{1}{c}{With Controls}\\
 \midrule
-2014                &      -0.145\sym{***}&      -0.135\sym{***}&      -0.677\sym{*}  \\
-                    &   (0.00457)         &   (0.00502)         &     (0.366)         \\
+2014 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      -0.571\sym{*}  &      -0.593\sym{*}  \\
+                    &     (0.326)         &     (0.309)         \\
 \addlinespace
-2014 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      -0.383\sym{**} &      -0.380\sym{**} &      -3.673         \\
-                    &     (0.177)         &     (0.168)         &     (9.735)         \\
+2015 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      -0.415         &      -0.429\sym{*}  \\
+                    &     (0.262)         &     (0.243)         \\
 \addlinespace
-2015                &      -0.102\sym{***}&     -0.0956\sym{***}&      -0.457\sym{*}  \\
-                    &   (0.00422)         &   (0.00453)         &     (0.244)         \\
+2016 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      -0.208         &      -0.238         \\
+                    &     (0.175)         &     (0.159)         \\
 \addlinespace
-2015 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      -0.227\sym{*}  &      -0.211\sym{*}  &      -2.406         \\
-                    &     (0.126)         &     (0.116)         &     (6.490)         \\
+2018 $\times$ Tariff Exposure ($\Delta\tau\_j$)&     -0.0956         &      -0.117         \\
+                    &     (0.110)         &     (0.113)         \\
 \addlinespace
-2016                &     -0.0548\sym{***}&     -0.0510\sym{***}&      -0.231\sym{*}  \\
-                    &   (0.00245)         &   (0.00254)         &     (0.122)         \\
+2019 $\times$ Tariff Exposure ($\Delta\tau\_j$)&    -0.00351         &     -0.0188         \\
+                    &    (0.0806)         &    (0.0852)         \\
 \addlinespace
-2016 $\times$ Tariff Exposure ($\Delta\tau\_j$)&     -0.0198         &     -0.0207         &      -1.119         \\
-                    &    (0.0499)         &    (0.0394)         &     (3.229)         \\
+2020 $\times$ Tariff Exposure ($\Delta\tau\_j$)&           0         &           0         \\
+                    &         (.)         &         (.)         \\
 \addlinespace
-2018                &      0.0527\sym{***}&      0.0504\sym{***}&       0.231\sym{*}  \\
-                    &   (0.00220)         &   (0.00214)         &     (0.122)         \\
+2017 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      -0.188         &      -0.212         \\
+                    &     (0.161)         &     (0.155)         \\
 \addlinespace
-2018 $\times$ Tariff Exposure ($\Delta\tau\_j$)&      0.0928         &      0.0961         &       1.197         \\
-                    &    (0.0691)         &    (0.0595)         &     (3.240)         \\
+Female              &                     &      -0.272\sym{***}\\
+                    &                     &    (0.0322)         \\
 \addlinespace
-2019                &      0.0997\sym{***}&      0.0944\sym{***}&       0.455\sym{*}  \\
-                    &   (0.00321)         &   (0.00316)         &     (0.244)         \\
+Age                 &                     &     0.00368\sym{***}\\
+                    &                     &   (0.00121)         \\
 \addlinespace
-2019 $\times$ Tariff Exposure ($\Delta\tau\_j$)&       0.185         &       0.192         &       2.405         \\
-                    &     (0.129)         &     (0.120)         &     (6.490)         \\
+Age Squared         &                     & -0.00000386\sym{***}\\
+                    &                     &(0.00000118)         \\
 \addlinespace
-2020                &       0.138\sym{***}&       0.126\sym{***}&       0.668\sym{*}  \\
-                    &   (0.00403)         &   (0.00423)         &     (0.365)         \\
-\addlinespace
-2020 $\times$ Tariff Exposure ($\Delta\tau\_j$)&       0.188         &       0.213         &       3.533         \\
-                    &     (0.161)         &     (0.158)         &     (9.725)         \\
-\addlinespace
-Tariff Exposure ($\Delta\tau\_j$)&           0         &           0         &           0         \\
-                    &         (.)         &         (.)         &         (.)         \\
-\addlinespace
-2017                &           0         &           0         &           0         \\
-                    &         (.)         &         (.)         &         (.)         \\
-\addlinespace
-2017 $\times$ Tariff Exposure ($\Delta\tau\_j$)&           0         &           0         &           0         \\
-                    &         (.)         &         (.)         &         (.)         \\
-\addlinespace
-Female              &                     &      -0.278\sym{***}&      -0.278\sym{***}\\
-                    &                     &    (0.0334)         &    (0.0335)         \\
-\addlinespace
-Age                 &                     &    -0.00444\sym{***}&    -0.00444\sym{***}\\
-                    &                     &  (0.000355)         &  (0.000355)         \\
-\addlinespace
-Years of Schooling  &                     &      0.0329\sym{***}&      0.0329\sym{***}\\
-                    &                     &   (0.00268)         &   (0.00268)         \\
+Years of Schooling  &                     &      0.0330\sym{***}\\
+                    &                     &   (0.00286)         \\
 \midrule
-Observations        &   3,021,806         &   3,021,806         &   3,021,806         \\
-R-squared           &       0.262         &       0.326         &       0.326         \\
+Observations        &   3,021,806         &   3,021,806         \\
+R-squared           &       0.262         &       0.316         \\
 \bottomrule
-\multicolumn{4}{l}{\footnotesize Standard errors in parentheses}\\
-\multicolumn{4}{l}{\footnotesize Standard errors clustered by 3-digit SCIAN industry.}\\
-\multicolumn{4}{l}{\footnotesize All regressions include industry fixed effects.}\\
-\multicolumn{4}{l}{\footnotesize Base year is 2017. $\Delta\tau\_j$ is the pre-war weighted average}\\
-\multicolumn{4}{l}{\footnotesize US tariff increase on Chinese goods in industry $.}\\
-\multicolumn{4}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
+\multicolumn{3}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{3}{l}{\footnotesize Standard errors clustered by 3-digit SCIAN industry.}\\
+\multicolumn{3}{l}{\footnotesize All regressions include industry and year fixed effects.}\\
+\multicolumn{3}{l}{\footnotesize Base year is 2017. $\Delta\tau\_j$ is the pre-war weighted average}\\
+\multicolumn{3}{l}{\footnotesize US tariff increase on Chinese goods in industry $.}\\
+\multicolumn{3}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
 \end{tabular}
 \end{table}
