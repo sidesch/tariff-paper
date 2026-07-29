@@ -147,7 +147,7 @@ Histogram of industry tariff exposure
 ********************************************************************************/
 use "$data/processed/tariffs_by_scian3.dta", clear
 
-histogram dz_usch_w, ///
+histogram dz_usch_w, bins(20) ///
     frequency ///
     xlabel(0(0.05)0.25) ///
     xtitle("Average Tariff Increase") ///
@@ -165,8 +165,8 @@ Main event study baseline
 use "$data/processed/enoe_analysis.dta", clear
 encode scian3, gen(scian3_num)
 
-reghdfe log_income c.dz_usch_w#ib2017.year, ///
-    absorb(scian3_num year) ///
+reghdfe log_income c.dz_usch_w##ib2017.year, ///
+    absorb(scian3_num) ///
     cluster(scian3_num)
 
 est sto reg1
@@ -174,8 +174,8 @@ est sto reg1
 /********************************************************************************
 Main event study with individual controls
 ********************************************************************************/
-reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool, ///
-    absorb(scian3_num year) ///
+reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool, ///
+    absorb(scian3_num) ///
     cluster(scian3_num)
 
 est sto reg2
@@ -184,8 +184,6 @@ est sto reg2
 Table with regression results
 ********************************************************************************/
 esttab reg1 reg2 using "$output/table3_mainresults.tex", replace ///
-    keep(*dz_usch_w* female age* yrschool) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
     title("Event Study: Effect of Tariff Exposure on Log Income") ///
     mtitles("No Controls" "With Controls") ///
@@ -222,15 +220,15 @@ Inequality regressions
 ********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
-_pctile incearn if year == 2017, p(10 25 50 75 90)
+_pctile incearn if year == 2017, p(0 10 25 50 75 90 100)
 
 local cutoffs
-forval i = 1/5 {
+forval i = 1/7 {
     local cutoffs `cutoffs' `=r(r`i')'
 }
 
 assert !missing(incearn)
-egen incgroup = cut(incearn), at(0 `cutoffs' .) icodes
+egen incgroup = cut(incearn), at(`cutoffs') icodes
 lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
 lab val incgroup incgrp_lbl
 lab var incgroup "Income Group"
@@ -243,8 +241,6 @@ forval g = 0/5 {
 
 esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
 		using "$output/table4_heterogeneity.tex", replace ///
-    keep(*dz_usch_w*year*) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
     title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
     mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
@@ -268,15 +264,13 @@ drop _merge
 replace dz_usch_w = 0 if missing(dz_usch_w)
 
 * Regression
-reghdfe log_ratio_9010 c.dz_usch_w#ib2017.year, ///
-    absorb(scian3 year) ///
+reghdfe log_ratio_9010 c.dz_usch_w##ib2017.year, ///
+    absorb(scian3) ///
     cluster(scian3)
 
 est sto ratio_9010
 
 esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
-    keep(*dz_usch_w*year*) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
     title("Robustness: Effect of Tariff Exposure on Log 90/10 Income Ratio") ///
     mtitles("Log 90/10 Ratio") ///
