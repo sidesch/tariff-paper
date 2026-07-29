@@ -222,15 +222,19 @@ Inequality regressions
 ********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
-_pctile incearn if year == 2017, p(0 10 25 50 75 90 100)
+_pctile incearn if year == 2017, p(10 25 50 75 90)
 
 local cutoffs
-forval i = 1/7 {
+forval i = 1/5 {
     local cutoffs `cutoffs' `=r(r`i')'
 }
 
+summ incearn, detail
+local min = r(min)
+local max = r(max)
+
 assert !missing(incearn)
-egen incgroup = cut(incearn), at(`cutoffs') icodes
+egen incgroup = cut(incearn), at(`min' `cutoffs' `max') icodes
 lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
 lab val incgroup incgrp_lbl
 lab var incgroup "Income Group"
