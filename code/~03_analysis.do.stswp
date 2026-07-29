@@ -240,8 +240,8 @@ lab val incgroup incgrp_lbl
 lab var incgroup "Income Group"
 
 forval g = 0/5 {
-		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3 year) cluster(scian3)
+		reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool ///
+			if incgroup == `g', absorb(scian3) cluster(scian3)
 		est sto reg_group`g'
 }
 
