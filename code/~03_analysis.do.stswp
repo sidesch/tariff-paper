@@ -147,7 +147,7 @@ Histogram of industry tariff exposure
 ********************************************************************************/
 use "$data/processed/tariffs_by_scian3.dta", clear
 
-histogram dz_usch_w, ///
+histogram dz_usch_w, bins(20) ///
     frequency ///
     xlabel(0(0.05)0.25) ///
     xtitle("Average Tariff Increase") ///
@@ -165,8 +165,8 @@ Main event study baseline
 use "$data/processed/enoe_analysis.dta", clear
 encode scian3, gen(scian3_num)
 
-reghdfe log_income c.dz_usch_w#ib2017.year, ///
-    absorb(scian3_num year) ///
+reghdfe log_income c.dz_usch_w##ib2017.year, ///
+    absorb(scian3_num) ///
     cluster(scian3_num)
 
 est sto reg1
@@ -174,8 +174,8 @@ est sto reg1
 /********************************************************************************
 Main event study with individual controls
 ********************************************************************************/
-reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool, ///
-    absorb(scian3_num year) ///
+reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool, ///
+    absorb(scian3_num) ///
     cluster(scian3_num)
 
 est sto reg2
@@ -184,8 +184,6 @@ est sto reg2
 Table with regression results
 ********************************************************************************/
 esttab reg1 reg2 using "$output/table3_mainresults.tex", replace ///
-    keep(*dz_usch_w* female age* yrschool) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
     title("Event Study: Effect of Tariff Exposure on Log Income") ///
     mtitles("No Controls" "With Controls") ///
@@ -222,26 +220,22 @@ Inequality regressions
 ********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
-_pctile incearn if year == 2017, p( 10 25 50 75 90 )
+_pctile incearn if year == 2017, p(0 10 25 50 75 90 100)
 
 local cutoffs
-forval i = 1/5 {
+forval i = 1/7 {
     local cutoffs `cutoffs' `=r(r`i')'
 }
 
-summ incearn, detail
-local max = r(max)
-local min = r(min)
-
 assert !missing(incearn)
-egen incgroup = cut(incearn), at(`min', `cutoffs', `max' ) icodes
+egen incgroup = cut(incearn), at(`cutoffs') icodes
 lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
 lab val incgroup incgrp_lbl
 lab var incgroup "Income Group"
 
 forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3 year) cluster(scian3)
+			if incgroup == `g', absorb(scian3_num year) cluster(scian3_num)
 		est sto reg_group`g'
 }
 
@@ -270,558 +264,13 @@ drop _merge
 replace dz_usch_w = 0 if missing(dz_usch_w)
 
 * Regression
-reghdfe log_ratio_9010 c.dz_usch_w#ib2017.year, ///
-    absorb(scian3 year) ///
+reghdfe log_ratio_9010 c.dz_usch_w##ib2017.year, ///
+    absorb(scian3) ///
     cluster(scian3)
 
 est sto ratio_9010
 
 esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
-    label booktabs ///
-    title("Robustness: Effect of Tariff Exposure on Log 90/10 Income Ratio") ///
-    mtitles("Log 90/10 Ratio") ///
-    se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
-    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "Outcome is log ratio of 90th to 10th income percentile" ///
-             "within each industry-year cell." ///
-             "Base year is 2017.")
-
-********************************************************************************
-* PLOT B: Employment in high vs low tariff exposure industries over time
-********************************************************************************
-use "$data/processed/enoe_merged.dta", clear
-
-* Create high/low exposure groups based on median tariff exposure
-* Only among industries with nonzero exposure
-summarize dz_usch_w if dz_usch_w > 0, detail
-local median_tariff = r(p50)
-
-gen exposure_group = .
-replace exposure_group = 0 if dz_usch_w == 0
-replace exposure_group = 1 if dz_usch_w > 0 & dz_usch_w <= `median_tariff'
-replace exposure_group = 2 if dz_usch_w > `median_tariff'
-
-label define exp_lbl 0 "No Exposure (Services)" ///
-                     1 "Low Exposure" ///
-                     2 "High Exposure"
-label values exposure_group exp_lbl
-
-* Collapse to group-year level - count employed workers
-keep if incearn > 0 & incearn < 99999998
-collapse (count) employed=incearn, by(exposure_group year)
-
-* Normalize to 2017 = 100 for each group
-bysort exposure_group: gen base = employed if year == 2017
-bysort exposure_group: egen base2017 = max(base)
-gen emp_index = (employed / base2017) * 100
-drop base base2017
-
-twoway ///
-    (line emp_index year if exposure_group == 0, ///
-        lcolor(gray) lwidth(medium) lpattern(dot)) ///
-    (line emp_index year if exposure_group == 1, ///
-        lcolor(navy) lwidth(medium) lpattern(dash)) ///
-    (line emp_index year if exposure_group == 2, ///
-        lcolor(cranberry) lwidth(medthick) lpattern(solid)), ///
-    xline(2018, lcolor(red) lpattern(dash)) ///
-    yline(100, lcolor(black) lpattern(dot)) ///
-    legend(order(1 "No Exposure (Services)" ///
-                 2 "Low Tariff Exposure" ///
-                 3 "High Tariff Exposure")) ///
-    xlabel(2014(1)2020) ///
-    xtitle("Year") ///
-    ytitle("Employment Index (2017 = 100)") ///
-    title("Employment by Industry Tariff Exposure") ///
-    note("Source: ENOE, INEGI. Dashed line indicates 2018 trade war onset." ///
-         "High/low exposure split at median tariff increase among exposed industries.") ///
-    scheme(s2mono)
-
-graph export "$output/figureB_employment.pdf", replace
-
-********************************************************************************
-* TABLE C: Top and bottom tariff-exposed industries
-********************************************************************************
-use "$data/processed/tariffs_by_scian3.dta", clear
-
-* Merge in industry names - we need to get labels from ENOE
-* Create a name lookup from the encoded scian3 variable
-preserve
-    use "$data/processed/enoe_merged.dta", clear
-    keep scian3 ind
-    duplicates drop scian3, force
-    save "$data/processed/scian3_labels.dta", replace
-restore
-
-merge 1:1 scian3 using "$data/processed/scian3_labels.dta"
-drop _merge
-
-* Sort and keep top 10 and bottom 10 nonzero
-gsort -dz_usch_w
-keep if dz_usch_w > 0
-
-* Top 10 most exposed
-preserve
-    keep in 1/10
-    gen rank = _n
-    gen exposure_pct = dz_usch_w * 100
-    
-    listtab rank scian3 exposure_pct using "$output/tableC_top_industries.tex", ///
-        replace ///
-        rstyle(tabular) ///
-        head("\begin{tabular}{clc}" ///
-             "\toprule" ///
-             "Rank & Industry (SCIAN) & Tariff Increase (\%) \\" ///
-             "\midrule") ///
-        foot("\bottomrule" ///
-             "\multicolumn{3}{l}{\footnotesize Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance.} \\" ///
-             "\multicolumn{3}{l}{\footnotesize Top 10 industries by weighted average US tariff increase on Chinese goods.} \\" ///
-             "\end{tabular}")
-restore
-
-* Bottom 10 least exposed (nonzero)
-gsort dz_usch_w
-preserve
-    keep if dz_usch_w > 0
-    keep in 1/10
-    gen rank = _n
-    gen exposure_pct = dz_usch_w * 100
-
-    listtab rank scian3 exposure_pct using "$output/tableC_bottom_industries.tex", ///
-        replace ///
-        rstyle(tabular) ///
-        head("\begin{tabular}{clc}" ///
-             "\toprule" ///
-             "Rank & Industry (SCIAN) & Tariff Increase (\%) \\" ///
-             "\midrule") ///
-        foot("\bottomrule" ///
-             "\multicolumn{3}{l}{\footnotesize Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance.} \\" ///
-             "\multicolumn{3}{l}{\footnotesize Bottom 10 industries by weighted average US tariff increase on Chinese goods.} \\" ///
-             "\end{tabular}")
-restore
-use "$data/processed/enoe_analysis.dta", clear
-
-_pctile incearn if year == 2017, p( 10 25 50 75 90 )
-
-local cutoffs
-forval i = 1/5 {
-    local cutoffs `cutoffs' `=r(r`i')'
-}
-
-summ incearn, detail
-local max = r(max)
-local min = r(min)
-
-assert !missing(incearn)
-egen incgroup = cut(incearn), at(`min', `cutoffs', `max' ) icodes
-lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
-lab val incgroup incgrp_lbl
-lab var incgroup "Income Group"
-
-forval g = 0/5 {
-		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3 year) cluster(scian3)
-		est sto reg_group`g'
-}
-
-esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
-		using "$output/table4_heterogeneity.tex", replace ///
-    label booktabs ///
-    title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
-    mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
-    se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
-    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "Income groups defined by fixed 2017 nominal income cutoffs.")
-
-/********************************************************************************
-90/10 ratio regression
-********************************************************************************/
-use "$data/processed/enoe_analysis.dta", clear
-
-collapse (p10) p10=incearn (p90) p90=incearn, by(scian3 year)
-
-gen log_ratio_9010 = log(p90/p10)
-label var log_ratio_9010 "Log 90/10 Income Ratio"
-
-merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta", keep(1 3)
-drop _merge
-replace dz_usch_w = 0 if missing(dz_usch_w)
-
-* Regression
-reghdfe log_ratio_9010 c.dz_usch_w#ib2017.year, ///
-    absorb(scian3 year) ///
-    cluster(scian3)
-
-est sto ratio_9010
-
-esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
-    label booktabs ///
-    title("Robustness: Effect of Tariff Exposure on Log 90/10 Income Ratio") ///
-    mtitles("Log 90/10 Ratio") ///
-    se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
-    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "Outcome is log ratio of 90th to 10th income percentile" ///
-             "within each industry-year cell." ///
-             "Base year is 2017.")
-
-********************************************************************************
-* PLOT B: Employment in high vs low tariff exposure industries over time
-********************************************************************************
-use "$data/processed/enoe_merged.dta", clear
-
-* Create high/low exposure groups based on median tariff exposure
-* Only among industries with nonzero exposure
-summarize dz_usch_w if dz_usch_w > 0, detail
-local median_tariff = r(p50)
-
-gen exposure_group = .
-replace exposure_group = 0 if dz_usch_w == 0
-replace exposure_group = 1 if dz_usch_w > 0 & dz_usch_w <= `median_tariff'
-replace exposure_group = 2 if dz_usch_w > `median_tariff'
-
-label define exp_lbl 0 "No Exposure (Services)" ///
-                     1 "Low Exposure" ///
-                     2 "High Exposure"
-label values exposure_group exp_lbl
-
-* Collapse to group-year level - count employed workers
-keep if incearn > 0 & incearn < 99999998
-collapse (count) employed=incearn, by(exposure_group year)
-
-* Normalize to 2017 = 100 for each group
-bysort exposure_group: gen base = employed if year == 2017
-bysort exposure_group: egen base2017 = max(base)
-gen emp_index = (employed / base2017) * 100
-drop base base2017
-
-twoway ///
-    (line emp_index year if exposure_group == 0, ///
-        lcolor(gray) lwidth(medium) lpattern(dot)) ///
-    (line emp_index year if exposure_group == 1, ///
-        lcolor(navy) lwidth(medium) lpattern(dash)) ///
-    (line emp_index year if exposure_group == 2, ///
-        lcolor(cranberry) lwidth(medthick) lpattern(solid)), ///
-    xline(2018, lcolor(red) lpattern(dash)) ///
-    yline(100, lcolor(black) lpattern(dot)) ///
-    legend(order(1 "No Exposure (Services)" ///
-                 2 "Low Tariff Exposure" ///
-                 3 "High Tariff Exposure")) ///
-    xlabel(2014(1)2020) ///
-    xtitle("Year") ///
-    ytitle("Employment Index (2017 = 100)") ///
-    title("Employment by Industry Tariff Exposure") ///
-    note("Source: ENOE, INEGI. Dashed line indicates 2018 trade war onset." ///
-         "High/low exposure split at median tariff increase among exposed industries.") ///
-    scheme(s2mono)
-
-graph export "$output/figureB_employment.pdf", replace
-
-********************************************************************************
-* TABLE C: Top and bottom tariff-exposed industries
-********************************************************************************
-use "$data/processed/tariffs_by_scian3.dta", clear
-
-* Merge in industry names - we need to get labels from ENOE
-* Create a name lookup from the encoded scian3 variable
-preserve
-    use "$data/processed/enoe_merged.dta", clear
-    keep scian3 ind
-    duplicates drop scian3, force
-    save "$data/processed/scian3_labels.dta", replace
-restore
-
-merge 1:1 scian3 using "$data/processed/scian3_labels.dta"
-drop _merge
-
-* Sort and keep top 10 and bottom 10 nonzero
-gsort -dz_usch_w
-keep if dz_usch_w > 0
-
-* Top 10 most exposed
-preserve
-    keep in 1/10
-    gen rank = _n
-    gen exposure_pct = dz_usch_w * 100
-    
-    listtab rank scian3 exposure_pct using "$output/tableC_top_industries.tex", ///
-        replace ///
-        rstyle(tabular) ///
-        head("\begin{tabular}{clc}" ///
-             "\toprule" ///
-             "Rank & Industry (SCIAN) & Tariff Increase (\%) \\" ///
-             "\midrule") ///
-        foot("\bottomrule" ///
-             "\multicolumn{3}{l}{\footnotesize Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance.} \\" ///
-             "\multicolumn{3}{l}{\footnotesize Top 10 industries by weighted average US tariff increase on Chinese goods.} \\" ///
-             "\end{tabular}")
-restore
-
-* Bottom 10 least exposed (nonzero)
-gsort dz_usch_w
-preserve
-    keep if dz_usch_w > 0
-    keep in 1/10
-    gen rank = _n
-    gen exposure_pct = dz_usch_w * 100
-
-    listtab rank scian3 exposure_pct using "$output/tableC_bottom_industries.tex", ///
-        replace ///
-        rstyle(tabular) ///
-        head("\begin{tabular}{clc}" ///
-             "\toprule" ///
-             "Rank & Industry (SCIAN) & Tariff Increase (\%) \\" ///
-             "\midrule") ///
-        foot("\bottomrule" ///
-             "\multicolumn{3}{l}{\footnotesize Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance.} \\" ///
-             "\multicolumn{3}{l}{\footnotesize Bottom 10 industries by weighted average US tariff increase on Chinese goods.} \\" ///
-             "\end{tabular}")
-restore
-use "$data/processed/enoe_analysis.dta", clear
-
-_pctile incearn if year == 2017, p( 10 25 50 75 90 )
-
-local cutoffs
-forval i = 1/5 {
-    local cutoffs `cutoffs' `=r(r`i')'
-}
-
-summ incearn, detail
-local max = r(max)
-local min = r(min)
-
-assert !missing(incearn)
-egen incgroup = cut(incearn), at(`min', `cutoffs', `max' ) icodes
-lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
-lab val incgroup incgrp_lbl
-lab var incgroup "Income Group"
-
-forval g = 0/5 {
-		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3 year) cluster(scian3)
-		est sto reg_group`g'
-}
-
-esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
-		using "$output/table4_heterogeneity.tex", replace ///
-    keep(*dz_usch_w*year*) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
-    label booktabs ///
-    title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
-    mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
-    se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
-    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "Income groups defined by fixed 2017 nominal income cutoffs.")
-
-/********************************************************************************
-90/10 ratio regression
-********************************************************************************/
-use "$data/processed/enoe_analysis.dta", clear
-
-collapse (p10) p10=incearn (p90) p90=incearn, by(scian3 year)
-
-gen log_ratio_9010 = log(p90/p10)
-label var log_ratio_9010 "Log 90/10 Income Ratio"
-
-merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta", keep(1 3)
-drop _merge
-replace dz_usch_w = 0 if missing(dz_usch_w)
-
-* Regression
-reghdfe log_ratio_9010 c.dz_usch_w#ib2017.year, ///
-    absorb(scian3 year) ///
-    cluster(scian3)
-
-est sto ratio_9010
-
-esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
-    keep(*dz_usch_w*year*) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
-    label booktabs ///
-    title("Robustness: Effect of Tariff Exposure on Log 90/10 Income Ratio") ///
-    mtitles("Log 90/10 Ratio") ///
-    se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
-    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "Outcome is log ratio of 90th to 10th income percentile" ///
-             "within each industry-year cell." ///
-             "Base year is 2017.")
-
-********************************************************************************
-* PLOT B: Employment in high vs low tariff exposure industries over time
-********************************************************************************
-use "$data/processed/enoe_merged.dta", clear
-
-* Create high/low exposure groups based on median tariff exposure
-* Only among industries with nonzero exposure
-summarize dz_usch_w if dz_usch_w > 0, detail
-local median_tariff = r(p50)
-
-gen exposure_group = .
-replace exposure_group = 0 if dz_usch_w == 0
-replace exposure_group = 1 if dz_usch_w > 0 & dz_usch_w <= `median_tariff'
-replace exposure_group = 2 if dz_usch_w > `median_tariff'
-
-label define exp_lbl 0 "No Exposure (Services)" ///
-                     1 "Low Exposure" ///
-                     2 "High Exposure"
-label values exposure_group exp_lbl
-
-* Collapse to group-year level - count employed workers
-keep if incearn > 0 & incearn < 99999998
-collapse (count) employed=incearn, by(exposure_group year)
-
-* Normalize to 2017 = 100 for each group
-bysort exposure_group: gen base = employed if year == 2017
-bysort exposure_group: egen base2017 = max(base)
-gen emp_index = (employed / base2017) * 100
-drop base base2017
-
-twoway ///
-    (line emp_index year if exposure_group == 0, ///
-        lcolor(gray) lwidth(medium) lpattern(dot)) ///
-    (line emp_index year if exposure_group == 1, ///
-        lcolor(navy) lwidth(medium) lpattern(dash)) ///
-    (line emp_index year if exposure_group == 2, ///
-        lcolor(cranberry) lwidth(medthick) lpattern(solid)), ///
-    xline(2018, lcolor(red) lpattern(dash)) ///
-    yline(100, lcolor(black) lpattern(dot)) ///
-    legend(order(1 "No Exposure (Services)" ///
-                 2 "Low Tariff Exposure" ///
-                 3 "High Tariff Exposure")) ///
-    xlabel(2014(1)2020) ///
-    xtitle("Year") ///
-    ytitle("Employment Index (2017 = 100)") ///
-    title("Employment by Industry Tariff Exposure") ///
-    note("Source: ENOE, INEGI. Dashed line indicates 2018 trade war onset." ///
-         "High/low exposure split at median tariff increase among exposed industries.") ///
-    scheme(s2mono)
-
-graph export "$output/figureB_employment.pdf", replace
-
-********************************************************************************
-* TABLE C: Top and bottom tariff-exposed industries
-********************************************************************************
-use "$data/processed/tariffs_by_scian3.dta", clear
-
-* Merge in industry names - we need to get labels from ENOE
-* Create a name lookup from the encoded scian3 variable
-preserve
-    use "$data/processed/enoe_merged.dta", clear
-    keep scian3 ind
-    duplicates drop scian3, force
-    save "$data/processed/scian3_labels.dta", replace
-restore
-
-merge 1:1 scian3 using "$data/processed/scian3_labels.dta"
-drop _merge
-
-* Sort and keep top 10 and bottom 10 nonzero
-gsort -dz_usch_w
-keep if dz_usch_w > 0
-
-* Top 10 most exposed
-preserve
-    keep in 1/10
-    gen rank = _n
-    gen exposure_pct = dz_usch_w * 100
-    
-    listtab rank scian3 exposure_pct using "$output/tableC_top_industries.tex", ///
-        replace ///
-        rstyle(tabular) ///
-        head("\begin{tabular}{clc}" ///
-             "\toprule" ///
-             "Rank & Industry (SCIAN) & Tariff Increase (\%) \\" ///
-             "\midrule") ///
-        foot("\bottomrule" ///
-             "\multicolumn{3}{l}{\footnotesize Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance.} \\" ///
-             "\multicolumn{3}{l}{\footnotesize Top 10 industries by weighted average US tariff increase on Chinese goods.} \\" ///
-             "\end{tabular}")
-restore
-
-* Bottom 10 least exposed (nonzero)
-gsort dz_usch_w
-preserve
-    keep if dz_usch_w > 0
-    keep in 1/10
-    gen rank = _n
-    gen exposure_pct = dz_usch_w * 100
-
-    listtab rank scian3 exposure_pct using "$output/tableC_bottom_industries.tex", ///
-        replace ///
-        rstyle(tabular) ///
-        head("\begin{tabular}{clc}" ///
-             "\toprule" ///
-             "Rank & Industry (SCIAN) & Tariff Increase (\%) \\" ///
-             "\midrule") ///
-        foot("\bottomrule" ///
-             "\multicolumn{3}{l}{\footnotesize Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance.} \\" ///
-             "\multicolumn{3}{l}{\footnotesize Bottom 10 industries by weighted average US tariff increase on Chinese goods.} \\" ///
-             "\end{tabular}")
-restore
-use "$data/processed/enoe_analysis.dta", clear
-
-_pctile incearn if year == 2017, p( 10 25 50 75 90 )
-
-local cutoffs
-forval i = 1/5 {
-    local cutoffs `cutoffs' `=r(r`i')'
-}
-
-summ incearn, detail
-local max = r(max)
-local min = r(min)
-
-assert !missing(incearn)
-egen incgroup = cut(incearn), at(`min', `cutoffs', `max' ) icodes
-lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
-lab val incgroup incgrp_lbl
-lab var incgroup "Income Group"
-
-forval g = 0/5 {
-		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3 year) cluster(scian3)
-		est sto reg_group`g'
-}
-
-esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
-		using "$output/table4_heterogeneity.tex", replace ///
-    keep(*dz_usch_w*year*) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
-    label booktabs ///
-    title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
-    mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
-    se star(* 0.10 ** 0.05 *** 0.01) ///
-    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
-    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
-             "Income groups defined by fixed 2017 nominal income cutoffs.")
-
-/********************************************************************************
-90/10 ratio regression
-********************************************************************************/
-use "$data/processed/enoe_analysis.dta", clear
-
-collapse (p10) p10=incearn (p90) p90=incearn, by(scian3 year)
-
-gen log_ratio_9010 = log(p90/p10)
-label var log_ratio_9010 "Log 90/10 Income Ratio"
-
-merge m:1 scian3 using "$data/processed/tariffs_by_scian3.dta", keep(1 3)
-drop _merge
-replace dz_usch_w = 0 if missing(dz_usch_w)
-
-* Regression
-reghdfe log_ratio_9010 c.dz_usch_w#ib2017.year, ///
-    absorb(scian3 year) ///
-    cluster(scian3)
-
-est sto ratio_9010
-
-esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
-    keep(*dz_usch_w*year*) ///
-    order(*2014* *2015* *2016* *2018* *2019* *2020*) ///
     label booktabs ///
     title("Robustness: Effect of Tariff Exposure on Log 90/10 Income Ratio") ///
     mtitles("Log 90/10 Ratio") ///
