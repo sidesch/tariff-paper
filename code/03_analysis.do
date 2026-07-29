@@ -241,7 +241,7 @@ lab var incgroup "Income Group"
 
 forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3_num year) cluster(scian3_num)
+			if incgroup == `g', absorb(scian3 year) cluster(scian3)
 		est sto reg_group`g'
 }
 
