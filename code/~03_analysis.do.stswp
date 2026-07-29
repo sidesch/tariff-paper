@@ -17,8 +17,10 @@ use "$data/processed/enoe_merged.dta", clear
 * the analysis should only be performed on employed individuals so we drop if income is null or 0
 keep if incearn > 0 & !missing(incearn)
 
-* remove incomes coded as null
+* remove variables coded as null
 drop if incearn >= 99999998
+drop if age >= 998
+drop if yrschool >= 98
 
 gen log_income = log(incearn)
 gen female = (sex == 2)
@@ -220,22 +222,26 @@ Inequality regressions
 ********************************************************************************/
 use "$data/processed/enoe_analysis.dta", clear
 
-_pctile incearn if year == 2017, p(0 10 25 50 75 90 100)
+_pctile incearn if year == 2017, p(10 25 50 75 90)
 
 local cutoffs
-forval i = 1/7 {
+forval i = 1/5 {
     local cutoffs `cutoffs' `=r(r`i')'
 }
 
+summ incearn, detail
+local min = r(min)
+local max = r(max)
+
 assert !missing(incearn)
-egen incgroup = cut(incearn), at(`cutoffs') icodes
+egen incgroup = cut(incearn), at(`min' `cutoffs' `max') icodes
 lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
 lab val incgroup incgrp_lbl
 lab var incgroup "Income Group"
 
 forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w#ib2017.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3_num year) cluster(scian3_num)
+			if incgroup == `g', absorb(scian3 year) cluster(scian3)
 		est sto reg_group`g'
 }
 
