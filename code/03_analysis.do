@@ -17,8 +17,10 @@ use "$data/processed/enoe_merged.dta", clear
 * the analysis should only be performed on employed individuals so we drop if income is null or 0
 keep if incearn > 0 & !missing(incearn)
 
-* remove incomes coded as null
+* remove variables coded as null
 drop if incearn >= 99999998
+drop if age >= 998
+drop if yrschool >= 98
 
 gen log_income = log(incearn)
 gen female = (sex == 2)
