@@ -20,7 +20,7 @@ keep if incearn > 0 & !missing(incearn)
 * remove variables coded as null
 drop if incearn >= 99999998
 drop if age >= 998
-drop if yrschool >= 98
+drop if yrschool >= 90
 
 gen log_income = log(incearn)
 gen female = (sex == 2)
