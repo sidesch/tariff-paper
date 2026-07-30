@@ -7,6 +7,10 @@ set more off
 global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 global output "~/Desktop/school/6th/ecn374/finaldraft/output"
 
+cap ssc install honestdid
+cap ssc install moremata
+cap ssc install coefplot
+
 * NOTE: the data skips over the 2nd quarter of 2020 due to data collection issues
 
 /*******************************************************************************
@@ -181,6 +185,10 @@ reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool, ///
     cluster(scian3_num)
 
 est sto reg2
+
+local plotopts xtitle(Mbar) ytitle("95% Robust CI")
+
+honestdid, pre(9/12) post(13/15) mvec(0(0.25)2) coefplot `plotopts
 
 /********************************************************************************
 Table with regression results
