@@ -188,8 +188,8 @@ est sto reg2
 
 local plotopts xtitle(Mbar) ytitle("95% Robust CI")
 
-honestdid, pre(9/12) post(13/15) mvec(0(0.25)2) coefplot `plotopts
-
+honestdid, pre(9/11) post(13/15) mvec(0(0.25)2) coefplot `plotopts'
+graph export "$output/honestdid_sensitivity.pdf", replace
 /********************************************************************************
 Table with regression results
 ********************************************************************************/
@@ -251,6 +251,10 @@ forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool ///
 			if incgroup == `g', absorb(scian3) cluster(scian3)
 		est sto reg_group`g'
+		local plotopts xtitle(Mbar) ytitle("95% Robust CI")
+
+honestdid, pre(9/11) post(13/15) mvec(0(0.25)2) coefplot `plotopts'
+graph export "$output/honestdid_sensitivity`g'.pdf", replace
 }
 
 esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
