@@ -186,10 +186,6 @@ reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool, ///
 
 est sto reg2
 
-local plotopts xtitle(Mbar) ytitle("95% Robust CI")
-
-honestdid, pre(9/11) post(13/15) mvec(0(0.25)2) coefplot `plotopts'
-graph export "$output/honestdid_sensitivity.pdf", replace
 /********************************************************************************
 Table with regression results
 ********************************************************************************/
@@ -251,10 +247,6 @@ forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool ///
 			if incgroup == `g', absorb(scian3) cluster(scian3)
 		est sto reg_group`g'
-		local plotopts xtitle(Mbar) ytitle("95% Robust CI")
-
-honestdid, pre(9/11) post(13/15) mvec(0(0.25)2) coefplot `plotopts'
-graph export "$output/honestdid_sensitivity`g'.pdf", replace
 }
 
 esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
@@ -266,6 +258,28 @@ esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
     stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
     addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
              "Income groups defined by fixed 2017 nominal income cutoffs.")
+
+/********************************************************************************
+Pre/post dummy robustness check
+********************************************************************************/
+gen post = year > 2018
+
+forval g = 0/5 {
+		reghdfe log_income c.dz_usch_w##c.post c.dz_usch_w##c.year female age age_sq yrschool ///
+			if incgroup == `g', absorb(scian3) cluter(scian3)
+		est sto post_group`g'
+}
+
+esttab post_group0 post_group1 post_group2 post_group3 post_group4 post_group5 ///
+		using "$output/table5_post_check.tex", replace ///
+    label booktabs ///
+    title("Effect of Tariff Exposure by Income Using Binary Year and Linear Time Trends") ///
+    mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
+    se star(* 0.10 ** 0.05 *** 0.01) ///
+    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
+    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
+             "Income groups defined by fixed 2017 nominal income cutoffs.")
+
 
 /********************************************************************************
 90/10 ratio regression
