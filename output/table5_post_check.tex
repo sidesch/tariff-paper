@@ -1,0 +1,50 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Effect of Tariff Exposure by Income Using Binary Year and Linear Time Trends}
+\begin{tabular}{l*{6}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}\\
+                    &\multicolumn{1}{c}{Bottom 10%}&\multicolumn{1}{c}{10-25%}&\multicolumn{1}{c}{25-50%}&\multicolumn{1}{c}{50-75%}&\multicolumn{1}{c}{75-90%}&\multicolumn{1}{c}{Top 10%}\\
+\midrule
+Tariff Exposure ($\Delta\tau\_j$)&           0         &           0         &           0         &           0         &           0         &           0         \\
+                    &         (.)         &         (.)         &         (.)         &         (.)         &         (.)         &         (.)         \\
+\addlinespace
+post                &     -0.0178\sym{***}&    -0.00317\sym{***}&    -0.00452\sym{***}&     0.00290\sym{***}&    0.000416         &     0.00362         \\
+                    &   (0.00321)         &   (0.00108)         &  (0.000952)         &  (0.000676)         &  (0.000493)         &   (0.00310)         \\
+\addlinespace
+Tariff Exposure ($\Delta\tau\_j$) $\times$ post&     -0.0472         &    -0.00568         &     -0.0216         &      0.0416\sym{**} &     0.00504         &     -0.0326         \\
+                    &    (0.0605)         &    (0.0304)         &    (0.0147)         &    (0.0199)         &    (0.0118)         &    (0.0927)         \\
+\addlinespace
+Tariff Exposure ($\Delta\tau\_j$)&           0         &           0         &           0         &           0         &           0         &           0         \\
+                    &         (.)         &         (.)         &         (.)         &         (.)         &         (.)         &         (.)         \\
+\addlinespace
+Year                &      0.0133\sym{***}&    0.000324         &     0.00383\sym{***}&     0.00295\sym{***}&     0.00127\sym{*}  &    0.000213         \\
+                    &   (0.00203)         &  (0.000654)         &  (0.000394)         &  (0.000388)         &  (0.000643)         &   (0.00137)         \\
+\addlinespace
+Tariff Exposure ($\Delta\tau\_j$) $\times$ Year&    -0.00881         &     -0.0275         &      0.0555\sym{***}&     0.00832         &     -0.0254\sym{***}&      0.0106         \\
+                    &    (0.0300)         &    (0.0212)         &    (0.0190)         &   (0.00729)         &   (0.00758)         &    (0.0404)         \\
+\addlinespace
+Female              &      -0.105\sym{***}&     -0.0194\sym{***}&     -0.0133\sym{***}&     -0.0134\sym{***}&    -0.00519\sym{***}&     -0.0434\sym{***}\\
+                    &    (0.0305)         &   (0.00413)         &   (0.00142)         &   (0.00203)         &   (0.00132)         &   (0.00796)         \\
+\addlinespace
+Age                 &      0.0140\sym{***}&     0.00351\sym{***}&     0.00248\sym{***}&     0.00293\sym{***}&     0.00117\sym{***}&     0.00400\sym{***}\\
+                    &   (0.00212)         &  (0.000468)         &  (0.000255)         &  (0.000334)         &  (0.000140)         &   (0.00107)         \\
+\addlinespace
+Age Squared         &   -0.000154\sym{***}&  -0.0000454\sym{***}&  -0.0000244\sym{***}&  -0.0000278\sym{***}& -0.00000716\sym{***}&   0.0000113         \\
+                    & (0.0000188)         &(0.00000559)         &(0.00000331)         &(0.00000386)         &(0.00000178)         & (0.0000125)         \\
+\addlinespace
+Years of Schooling  &      0.0112\sym{***}&    0.000705\sym{***}&     0.00273\sym{***}&     0.00344\sym{***}&     0.00361\sym{***}&      0.0243\sym{***}\\
+                    &   (0.00109)         &  (0.000187)         &  (0.000284)         &  (0.000237)         &  (0.000265)         &   (0.00178)         \\
+\addlinespace
+Constant            &      -19.88\sym{***}&       8.232\sym{***}&      -1.967\sym{**} &       2.282\sym{***}&       7.149\sym{***}&       8.427\sym{***}\\
+                    &     (3.542)         &     (1.234)         &     (0.918)         &     (0.679)         &     (1.120)         &     (2.582)         \\
+\midrule
+Observations        &     278,324         &     496,264         &     706,970         &     765,118         &     430,618         &     340,130         \\
+R-squared           &       0.104         &       0.039         &       0.055         &       0.072         &       0.059         &       0.100         \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize Standard errors in parentheses}\\
+\multicolumn{7}{l}{\footnotesize Standard errors clustered by 3-digit SCIAN industry.}\\
+\multicolumn{7}{l}{\footnotesize Income groups defined by fixed 2017 nominal income cutoffs.}\\
+\multicolumn{7}{l}{\footnotesize \sym{*} \(p<0.10\), \sym{**} \(p<0.05\), \sym{***} \(p<0.01\)}\\
+\end{tabular}
+\end{table}
