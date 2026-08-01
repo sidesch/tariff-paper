@@ -7,10 +7,6 @@ set more off
 global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 global output "~/Desktop/school/6th/ecn374/finaldraft/output"
 
-cap ssc install honestdid
-cap ssc install moremata
-cap ssc install coefplot
-
 * NOTE: the data skips over the 2nd quarter of 2020 due to data collection issues
 
 /*******************************************************************************
