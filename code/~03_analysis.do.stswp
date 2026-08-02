@@ -7,10 +7,6 @@ set more off
 global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 global output "~/Desktop/school/6th/ecn374/finaldraft/output"
 
-cap ssc install honestdid
-cap ssc install moremata
-cap ssc install coefplot
-
 * NOTE: the data skips over the 2nd quarter of 2020 due to data collection issues
 
 /*******************************************************************************
@@ -153,7 +149,7 @@ Histogram of industry tariff exposure
 ********************************************************************************/
 use "$data/processed/tariffs_by_scian3.dta", clear
 
-histogram dz_usch_w, bins(20) ///
+histogram dz_usch_w, bins(10) ///
     frequency ///
     xlabel(0(0.05)0.25) ///
     xtitle("Average Tariff Increase") ///
@@ -209,8 +205,8 @@ coefplot, ///
     keep(*year*dz_usch_w*) ///
     vertical ///
     yline(0, lcolor(black) lpattern(dash)) ///
-    xline(4.5, lcolor(red) lpattern(dash)) ///
-    xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2017" 5 "2018" 6 "2019" 7 "2020") ///
+    xline(4, lcolor(red) lpattern(dash)) ///
+    xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2018" 5 "2019" 6 "2020") ///
     xtitle("Year") ///
     ytitle("Coefficient on $\Delta\tau_j \times$ Year") ///
     title("Event Study: Tariff Exposure and Log Income") ///
@@ -247,6 +243,22 @@ forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool ///
 			if incgroup == `g', absorb(scian3) cluster(scian3)
 		est sto reg_group`g'
+
+	coefplot, ///
+	    keep(*year*dz_usch_w*) ///
+	    vertical ///
+	    yline(0, lcolor(black) lpattern(dash)) ///
+	    xline(4, lcolor(red) lpattern(dash)) ///
+	    xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2018" 5 "2019" 6 "2020") ///
+	    xtitle("Year") ///
+	    ytitle("Coefficient on $\Delta\tau_j \times$ Year") ///
+	    title("Event Study: Tariff Exposure and Log Income") ///
+	    note("Coefficients from Regression 2 (with controls). 95% CIs shown." ///
+	         "Base year is 2017. Dashed vertical line indicates 2018 trade war onset.") ///
+	    scheme(s2mono) ///
+	    ciopts(recast(rcap))
+
+	graph export "$output/figure3_eventstudy_`g'.pdf", replace
 }
 
 esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
@@ -300,6 +312,21 @@ reghdfe log_ratio_9010 c.dz_usch_w##ib2017.year, ///
     absorb(scian3) ///
     cluster(scian3)
 
+coefplot, ///
+    keep(*year*dz_usch_w*) ///
+    vertical ///
+    yline(0, lcolor(black) lpattern(dash)) ///
+    xline(4, lcolor(red) lpattern(dash)) ///
+    xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2018" 5 "2019" 6 "2020") ///
+    xtitle("Year") ///
+    ytitle("Coefficient on $\Delta\tau_j \times$ Year") ///
+    title("Event Study: Tariff Exposure and Log Income") ///
+    note("Coefficients from Regression 2 (with controls). 95% CIs shown." ///
+         "Base year is 2017. Dashed vertical line indicates 2018 trade war onset.") ///
+    scheme(s2mono) ///
+    ciopts(recast(rcap))
+
+graph export "$output/figure3_eventstudy.pdf", replace
 est sto ratio_9010
 
 esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
