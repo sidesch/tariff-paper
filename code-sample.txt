@@ -1,5 +1,5 @@
 * Excerpt from /code/cleaning/01_clean_imports.do
-/*******************************************************************************
+/**********************************************************************************
 Clean trade import data from Data Web
 **********************************************************************************/
 clear
@@ -23,7 +23,7 @@ save "$data/processed/imports_clean.dta", replace
 /*********************************************************************************
 Clean INEGI's concordance between TIGIE (Mexican tariff schedule) and SCIAN
 (NAICS) values.
-************************************************************************************/
+*********************************************************************************/
 clear
 set more off
 
@@ -79,3 +79,98 @@ replace dz_usch_w = 0 if _merge == 1
 drop if ind == "0"
 drop _merge
 save "$data/processed/enoe_merged.dta", replace
+
+* Excerpts from /code/analysis/analysis.do
+/*******************************************************************************
+All regressions, figures, and tables using cleaned data
+**********************************************************************************/
+clear all
+set more off
+
+global data "~/Desktop/school/6th/ecn374/finaldraft/data"
+global output "~/Desktop/school/6th/ecn374/finaldraft/output"
+
+* NOTE: the data skips over the 2nd quarter of 2020 due to data collection issues
+
+/*******************************************************************************
+Summary statistics table: income, age, and years of school
+*******************************************************************************/
+estpost tabstat incearn age yrschool, stats(mean sd min max n) columns(statistics)
+
+esttab using "$output/summarystats.tex", replace ///
+    cells("mean(fmt(2)) sd(fmt(2)) min(fmt(0)) max(fmt(0)) count(fmt(0))") ///
+    nomtitle nonumber label ///
+    title("Summary Statistics: ENOE Sample, Employed Workers 2014--2020") ///
+    collabels("Mean" "Std. Dev." "Min" "Max" "N")
+
+/********************************************************************************
+Histogram of industry tariff exposure
+********************************************************************************/
+use "$data/processed/tariffs_by_scian3.dta", clear
+
+histogram dz_usch_w, bins(10) ///
+    frequency ///
+    xlabel(0(0.05)0.25) ///
+    xtitle("Average Tariff Increase") ///
+    ytitle("Number of Industries") ///
+    title("Distribution of Tariff Exposure Across Industries") ///
+    note("Source: Fajgelbaum et al. (2024) and TIGIE-SCIAN concordance (INEGI)." ///
+         "Each observation is a 3-digit SCIAN industry.") ///
+    scheme(s2mono)
+
+graph export "$output/tariff_hist.pdf", replace
+
+/********************************************************************************
+Inequality regressions 
+********************************************************************************/
+use "$data/processed/enoe_analysis.dta", clear
+
+_pctile incearn if year == 2017, p(10 25 50 75 90)
+
+local cutoffs
+forval i = 1/5 {
+    local cutoffs `cutoffs' `=r(r`i')'
+}
+
+summ incearn, detail
+local min = r(min)
+local max = r(max)
+
+assert !missing(incearn)
+egen incgroup = cut(incearn), at(`min' `cutoffs' `max') icodes
+lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
+lab val incgroup incgrp_lbl
+lab var incgroup "Income Group"
+
+* note: when absorbing time fixed effects, the base year becomes 2020. to avoid 
+* this issue, we included each year indicator variable in the regression directly.
+forval g = 0/5 {
+		reghdfe log_income c.dz_usch_w##ib2017.year female age age_sq yrschool ///
+			if incgroup == `g', absorb(scian3) cluster(scian3)
+		est sto reg_group`g'
+
+	  coefplot, ///
+	    keep(*year*dz_usch_w*) ///
+	    vertical ///
+	    yline(0, lcolor(black) lpattern(dash)) ///
+	    xline(4, lcolor(red) lpattern(dash)) ///
+	    xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2018" 5 "2019" 6 "2020") ///
+	    xtitle("Year") ///
+	    ytitle("Coefficient on Tariff Increase by Year") ///
+	    note("Coefficients from Regression 2 (with controls). 95% CIs shown." ///
+	         "Base year is 2017. Dashed vertical line indicates 2018 trade war onset.") ///
+	    scheme(s2mono) ///
+	    ciopts(recast(rcap))
+
+	  graph export "$output/eventstudy_`g'.pdf", replace
+}
+
+esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
+		using "$output/table4_heterogeneity.tex", replace ///
+    label booktabs ///
+    title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
+    mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
+    se star(* 0.10 ** 0.05 *** 0.01) ///
+    stats(N r2, fmt(%9.0fc %9.3f) labels("Observations" "R-squared")) ///
+    addnotes("Standard errors clustered by 3-digit SCIAN industry." ///
+             "Income groups defined by fixed 2017 nominal income cutoffs.")
