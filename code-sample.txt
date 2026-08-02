@@ -29,6 +29,7 @@ set more off
 
 global data "~/Desktop/school/6th/ecn374/finaldraft/data"
 
+* importing this file with excel required AI assistance
 import excel "$data/raw/concordance_inegi.xlsx", cellrange(A5:E10000) firstrow
 rename A tigie_code
 rename D scian
@@ -67,7 +68,7 @@ keep if _merge == 3
 drop _merge
 
 gen scian3 = string(floor(scian_num / 1000))
-collapse (mean) dz_usch_w (rawsum) customs_value [aw=customs_value], by(scian3)
+collapse (mean) dz_usch_w [aw=customs_value], by(scian3)
 save "$data/processed/tariffs_by_scian3.dta", replace
 
 * merge with person-level data
@@ -137,7 +138,10 @@ local min = r(min)
 local max = r(max)
 
 assert !missing(incearn)
+
+* the cut command was discovered through AI assistance
 egen incgroup = cut(incearn), at(`min' `cutoffs' `max') icodes
+* I labeled the income groups with AI assistance
 lab def incgrp_lbl 0 "Bottom 10%" 1 "10-25%" 2 "25-50%" 3 "50-75%" 4 "75-90%" 5 "Top 10%"
 lab val incgroup incgrp_lbl
 lab var incgroup "Income Group"
@@ -166,7 +170,7 @@ forval g = 0/5 {
 }
 
 esttab reg_group0 reg_group1 reg_group2 reg_group3 reg_group4 reg_group5 ///
-		using "$output/table4_heterogeneity.tex", replace ///
+		using "$output/income_groups.tex", replace ///
     label booktabs ///
     title("Heterogeneity by Income Group: Effect of Tariff Exposure on Log Income") ///
     mtitles("Bottom 10%" "10-25%" "25-50%" "50-75%" "75-90%" "Top 10%") ///
