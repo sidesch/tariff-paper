@@ -208,8 +208,7 @@ coefplot, ///
     xline(4, lcolor(red) lpattern(dash)) ///
     xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2018" 5 "2019" 6 "2020") ///
     xtitle("Year") ///
-    ytitle("Coefficient on $\Delta\tau_j \times$ Year") ///
-    title("Event Study: Tariff Exposure and Log Income") ///
+    ytitle("Coefficient on Tariff Increase by Year") ///
     note("Coefficients from Regression 2 (with controls). 95% CIs shown." ///
          "Base year is 2017. Dashed vertical line indicates 2018 trade war onset.") ///
     scheme(s2mono) ///
@@ -251,8 +250,7 @@ forval g = 0/5 {
 	    xline(4, lcolor(red) lpattern(dash)) ///
 	    xlabel(1 "2014" 2 "2015" 3 "2016" 4 "2018" 5 "2019" 6 "2020") ///
 	    xtitle("Year") ///
-	    ytitle("Coefficient on $\Delta\tau_j \times$ Year") ///
-	    title("Event Study: Tariff Exposure and Log Income") ///
+	    ytitle("Coefficient on Tariff Increase by Year") ///
 	    note("Coefficients from Regression 2 (with controls). 95% CIs shown." ///
 	         "Base year is 2017. Dashed vertical line indicates 2018 trade war onset.") ///
 	    scheme(s2mono) ///
