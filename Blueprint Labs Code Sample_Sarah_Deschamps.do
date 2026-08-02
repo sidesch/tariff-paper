@@ -1,14 +1,3 @@
-/*******************************************************************************
-This code, written in Stata, follows excerpts from the research pipeline laid out 
-in my writing sample. The 1st and 2nd code chunks clean raw datasets and merge 
-them into a single processed file. The 3rd code chunk processes these datasets 
-and demonstrates the steps taken to calculate the weighted average tariff increase 
-in each industry. The final code chunks analyze the processed dataset by creating 
-summary statistics, a histogram of tariff increases, and regressions. 
-
-AI was used sparingly for syntax and is denoted using comments within the code.
-******************************************************************************/
-
 * Excerpt from /code/cleaning/01_clean_imports.do
 /**********************************************************************************
 Clean trade import data from Data Web
