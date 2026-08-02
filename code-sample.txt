@@ -5,6 +5,7 @@ Clean trade import data from Data Web
 clear
 
 global data "~/Desktop/school/6th/ecn374/finaldraft/data"
+cap mkdir "$data/processed"
 
 import excel "$data/raw/DataWeb-Query-Export.xlsx", sheet("Query Results") firstrow
 drop DataType Country Description
@@ -27,7 +28,6 @@ clear
 set more off
 
 global data "~/Desktop/school/6th/ecn374/finaldraft/data"
-cap mkdir "$data/processed"
 
 import excel "$data/raw/concordance_inegi.xlsx", cellrange(A5:E10000) firstrow
 rename A tigie_code
