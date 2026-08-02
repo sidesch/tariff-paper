@@ -276,7 +276,7 @@ gen post = year > 2018
 
 forval g = 0/5 {
 		reghdfe log_income c.dz_usch_w##c.post c.dz_usch_w##c.year female age age_sq yrschool ///
-			if incgroup == `g', absorb(scian3) cluter(scian3)
+			if incgroup == `g', absorb(scian3) cluster(scian3)
 		est sto post_group`g'
 }
 
@@ -324,7 +324,7 @@ coefplot, ///
     scheme(s2mono) ///
     ciopts(recast(rcap))
 
-graph export "$output/figure3_eventstudy.pdf", replace
+graph export "$output/figure3_90-10.pdf", replace
 est sto ratio_9010
 
 esttab ratio_9010 using "$output/table5_ratio9010.tex", replace ///
