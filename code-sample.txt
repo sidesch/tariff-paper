@@ -1,0 +1,31 @@
+* Excerpt from /code/cleaning/01_clean_imports.do
+
+* Excerpt from /code/cleaning/02_clean_concordance.do
+/*********************************************************************************
+Clean INEGI's concordance between TIGIE (Mexican tariff schedule) and SCIAN
+(NAICS) values.
+************************************************************************************/
+clear
+set more off
+
+global data "~/Desktop/school/6th/ecn374/finaldraft/data"
+cap mkdir "$data/processed"
+
+import excel "$data/raw/concordance_inegi.xlsx", cellrange(A5:E10000) firstrow
+rename A tigie_code
+rename D scian
+cap tostring scian, replace
+drop Reproductores~a Explotaciónde~s C
+
+drop if missing(tigie_code)
+replace tigie_code = subinstr(tigie_code, ".", "", .)  
+gen hs6 = real(substr(tigie_code, 1, 6))      
+gen scian_num = real(scian)
+
+* merge with hs6 import data
+merge m:1 hs6 using "$data/processed/imports_clean.dta", keep(3)
+drop _merge
+
+save "$data/processed/tigie_scian_clean.dta", replace
+
+* Excerpt from /code/processing/concordance.do
