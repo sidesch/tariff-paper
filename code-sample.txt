@@ -105,7 +105,7 @@ esttab using "$output/summarystats.tex", replace ///
     collabels("Mean" "Std. Dev." "Min" "Max" "N")
 
 /********************************************************************************
-Histogram of industry tariff exposure
+Histogram of industry tariff increases
 ********************************************************************************/
 use "$data/processed/tariffs_by_scian3.dta", clear
 
